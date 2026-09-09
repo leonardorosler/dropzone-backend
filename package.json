@@ -14,7 +14,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "bugs": {
     "url": "https://github.com/leonardorosler/dropzone-backend/issues"
   },
@@ -34,7 +34,7 @@
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^22.20.2",
-    "prisma": "^8.0.0-rc.13",
+    "prisma": "^7.10.0",
     "tsx": "^4.23.13",
     "typescript": "^5.9.3"
   }
