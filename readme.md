@@ -1,4 +1,4 @@
-# [Nome do Projeto] — Backend
+# DropZone — Backend
 
 API responsável pelo backend de uma plataforma web de vitrine e venda de roupas, desenvolvida como projeto acadêmico do curso de **Análise e Desenvolvimento de Sistemas do SENAC-RS**.
 
