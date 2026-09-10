@@ -5,6 +5,128 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-//   url      = env("DATABASE_URL")
+
 }
 
+
+enum Role {
+  CLIENTE
+  ADMIN
+}
+
+model Usuario {
+  id           String   @id @default(uuid())
+  nome         String
+  email        String   @unique
+  senhaHash    String
+  role         Role     @default(CLIENTE)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  favoritos  Favorito[]
+  avaliacoes Avaliacao[]
+  carrinhos  Carrinho[]
+}
+
+model Categoria {
+  id       String    @id @default(uuid())
+  nome     String    @unique
+  produtos Produto[]
+  criadoEm DateTime  @default(now())
+}
+
+model Produto {
+  id           String   @id @default(uuid())
+  nome         String
+  descricao    String
+  preco        Decimal  @db.Decimal(10, 2)
+  imagemUrl    String?
+  disponivel   Boolean  @default(true)
+  categoriaId  String
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  categoria     Categoria        @relation(fields: [categoriaId], references: [id])
+  variacoes     ProdutoVariacao[]
+  favoritos     Favorito[]
+  avaliacoes    Avaliacao[]
+  itensCarrinho ItemCarrinho[]
+}
+
+model Cor {
+  id        String            @id @default(uuid())
+  nome      String            @unique
+  hex       String?
+  variacoes ProdutoVariacao[]
+}
+
+model Tamanho {
+  id        String            @id @default(uuid())
+  nome      String            @unique
+  variacoes ProdutoVariacao[]
+}
+
+model ProdutoVariacao {
+  id         String  @id @default(uuid())
+  produtoId String
+  corId     String?
+  tamanhoId String
+  disponivel Boolean @default(true)
+
+  produto Produto @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  cor     Cor?    @relation(fields: [corId], references: [id])
+  tamanho Tamanho @relation(fields: [tamanhoId], references: [id])
+
+  @@unique([produtoId, corId, tamanhoId])
+}
+
+model Favorito {
+  id        String   @id @default(uuid())
+  usuarioId String
+  produtoId String
+  criadoEm  DateTime @default(now())
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  produto Produto @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, produtoId])
+}
+
+model Avaliacao {
+  id         String   @id @default(uuid())
+  nota       Int
+  comentario String?
+  usuarioId  String
+  produtoId  String
+  criadoEm   DateTime @default(now())
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  produto Produto @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, produtoId])
+}
+
+model Carrinho {
+  id           String   @id @default(uuid())
+  usuarioId    String
+  finalizado   Boolean  @default(false)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  usuario Usuario        @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  itens   ItemCarrinho[]
+}
+
+model ItemCarrinho {
+  id         String @id @default(uuid())
+  carrinhoId String
+  produtoId  String
+  corId      String?
+  tamanhoId  String
+  quantidade Int    @default(1)
+
+  carrinho Carrinho @relation(fields: [carrinhoId], references: [id], onDelete: Cascade)
+  produto  Produto  @relation(fields: [produtoId], references: [id])
+
+  @@unique([carrinhoId, produtoId, corId, tamanhoId])
+}
