@@ -4,6 +4,7 @@ import { criarCategoriaController, listarCategoriaController } from "./categoria
 
 export const categoriasRoutes = Router();
 
-categoriasRoutes.get("/", listarCategoriaController); //tem q fazer
+categoriasRoutes.get("/", listarCategoriaController); //feito
+
 
 categoriasRoutes.post("/", criarCategoriaController); // feito

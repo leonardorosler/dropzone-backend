@@ -16,5 +16,9 @@ export async function criarCategoria(data: criarCategoriaDTO){
 }
 
 export async function listarCategoria(){
-    //fazer
+    return prisma.categoria.findMany({
+    orderBy: {
+      nome: "asc",
+    },
+  });
 }

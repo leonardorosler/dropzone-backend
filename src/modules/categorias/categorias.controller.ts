@@ -14,5 +14,16 @@ export async function criarCategoriaController(req: Request, res: Response){
 }
 
 export async function listarCategoriaController(req: Request, res: Response){
-    const categoria = listarCategoria //fazer
+
+  try {
+    const categorias = await listarCategoria();
+
+    return res.status(200).json(categorias);
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      mensagem: "Erro ao listar categorias.",
+    });
+  }
 }
