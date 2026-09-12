@@ -2,6 +2,8 @@ import express from "express"
 import cors from "cors"
 
 import { categoriasRoutes } from "./modules/categorias/categorias.routes.js"
+import { produtosRoutes } from "./modules/produtos/produtos.routes.js"
+
 
 export const app = express()
 
@@ -13,3 +15,4 @@ app.get("/teste", (req, res)=>{
 })
 
 app.use("/categorias", categoriasRoutes)
+app.use("/produtos", produtosRoutes);
