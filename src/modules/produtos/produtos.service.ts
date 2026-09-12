@@ -5,7 +5,14 @@ interface CriarProdutoData {
   descricao: string;
   preco: number;
   imagemUrl?: string;
-  categoriaId: string;
+  categoriaId: number;
+}
+
+interface AtualizarProdutoData {
+  nome: string;
+  descricao: string;
+  preco: number;
+  categoriaId: number;
 }
 
 
@@ -33,9 +40,7 @@ export async function criarProduto(data: CriarProdutoData) {
   });
 
   return produto;
-  
-
-
+ 
 }
 
 
@@ -49,4 +54,57 @@ export async function listarProdutos() {
   });
 
   return produtos;
+}
+
+
+//atualiza produtos no banco pelo id
+export async function atualizarProduto(
+  id: number,
+  data: AtualizarProdutoData
+) {
+  const produto = await prisma.produto.update({
+    where: {
+      id: id,
+    },
+    data: {
+      nome: data.nome,
+      descricao: data.descricao,
+      preco: data.preco,
+      categoriaId: data.categoriaId,
+    },
+  });
+
+  return produto;
+}
+
+
+// altera a disponibilidade do produto disponivel :true | indisponivel :false
+export async function atualizarDisponibilidadeProduto(
+  id: number,
+  disponivel: boolean
+) {
+  const produto = await prisma.produto.update({
+    where: {
+      id,
+    },
+    data: {
+      disponivel,
+    },
+  });
+
+  return produto;
+}
+
+
+
+//deleta produtos do banco 
+export async function deletarProduto(id: number) {
+  const produto = await prisma.produto.delete({
+    where: {
+      id,
+    },
+
+  });
+
+  return produto;
 }

@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { criarProduto, listarProdutos } from "./produtos.service.js";
+import { atualizarDisponibilidadeProduto, atualizarProduto, criarProduto, deletarProduto, listarProdutos } from "./produtos.service.js";
 
 export async function criarProdutoController(  req: Request,  res: Response) 
 {
@@ -58,6 +58,91 @@ export async function listarProdutosController(
 
     return res.status(500).json({
       mensagem: "Erro ao listar produtos.",
+    });
+  }
+}
+
+export async function atualizarProdutoController(
+  req: Request,
+  res: Response
+) {
+  try {
+    const id = Number(req.params.id);
+
+    const produto = await atualizarProduto(id, req.body);
+
+    return res.status(200).json(produto);
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      mensagem: "Erro ao atualizar produto.",
+    });
+  }
+}
+
+// atualiza disponibilidade do produto
+export async function atualizarDisponibilidadeProdutoController(
+  req: Request,
+  res: Response
+) {
+  try {
+    const id = Number(req.params.id);
+    const { disponivel } = req.body;
+
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({
+        mensagem: "ID inválido.",
+      });
+    }
+
+    if (typeof disponivel !== "boolean") {
+      return res.status(400).json({
+        mensagem: "O campo disponivel deve ser true ou false.",
+      });
+    }
+
+    const produto = await atualizarDisponibilidadeProduto(
+      id,
+      disponivel
+    );
+
+    return res.status(200).json(produto);
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      mensagem: "Erro ao atualizar disponibilidade do produto.",
+    });
+  }
+}
+
+
+// deletar do banco
+export async function deletarProdutoController(
+  req: Request,
+  res: Response
+) {
+  try {
+    const id = Number(req.params.id);
+
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({
+        mensagem: "ID inválido.",
+      });
+    }
+
+    const produto = await deletarProduto(id);
+
+    return res.status(200).json({
+      mensagem: "Produto deletado com sucesso.",
+      produto,
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      mensagem: "Erro ao deletar produto.",
     });
   }
 }
