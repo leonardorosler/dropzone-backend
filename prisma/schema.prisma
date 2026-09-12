@@ -7,136 +7,126 @@ datasource db {
   provider = "postgresql"
 }
 
-enum Role {
-  CLIENTE
-  ADMIN
-}
-
 model Usuario {
-  id           Int      @id @default(autoincrement())
   nome         String
-  email        String   @unique
+  email        String      @unique
   senhaHash    String
-  role         Role     @default(CLIENTE)
-  criadoEm     DateTime @default(now())
-  atualizadoEm DateTime @updatedAt
-
-  favoritos  Favorito[]
-  avaliacoes Avaliacao[]
-  carrinhos  Carrinho[]
+  role         Role        @default(CLIENTE)
+  criadoEm     DateTime    @default(now())
+  atualizadoEm DateTime    @updatedAt
+  id           Int         @id @default(autoincrement())
+  avaliacoes   Avaliacao[]
+  carrinhos    Carrinho[]
+  favoritos    Favorito[]
 }
 
 model Categoria {
-  id       Int       @id @default(autoincrement())
   nome     String    @unique
-  produtos Produto[]
   criadoEm DateTime  @default(now())
+  id       Int       @id @default(autoincrement())
+  produtos Produto[]
 }
 
 model Produto {
-  id           Int      @id @default(autoincrement())
   nome         String
   descricao    String
-  preco        Decimal  @db.Decimal(10, 2)
-  disponivel   Boolean  @default(true)
+  preco        Decimal           @db.Decimal(10, 2)
+  disponivel   Boolean           @default(true)
+  criadoEm     DateTime          @default(now())
+  atualizadoEm DateTime          @updatedAt
+  id           Int               @id @default(autoincrement())
   categoriaId  Int
-  criadoEm     DateTime @default(now())
-  atualizadoEm DateTime @updatedAt
-
-  categoria Categoria          @relation(fields: [categoriaId], references: [id])
-  variacoes ProdutoVariacao[]
-  imagens   ProdutoImagem[]
-  favoritos Favorito[]
-  avaliacoes Avaliacao[]
+  avaliacoes   Avaliacao[]
+  favoritos    Favorito[]
+  categoria    Categoria         @relation(fields: [categoriaId], references: [id])
+  imagens      ProdutoImagem[]
+  variacoes    ProdutoVariacao[]
 }
 
 model Cor {
-  id        Int               @id @default(autoincrement())
   nome      String            @unique
   hex       String?
-  variacoes ProdutoVariacao[]
+  id        Int               @id @default(autoincrement())
   imagens   ProdutoImagem[]
+  variacoes ProdutoVariacao[]
 }
 
 model Tamanho {
-  id        Int               @id @default(autoincrement())
   nome      String            @unique
+  id        Int               @id @default(autoincrement())
   variacoes ProdutoVariacao[]
 }
 
 model ProdutoVariacao {
-  id         Int      @id @default(autoincrement())
-  produtoId  Int
-  corId      Int?
-  tamanhoId  Int
-  disponivel Boolean  @default(true)
-
-  produto Produto @relation(fields: [produtoId], references: [id], onDelete: Cascade)
-  cor     Cor?    @relation(fields: [corId], references: [id])
-  tamanho Tamanho @relation(fields: [tamanhoId], references: [id])
-
+  disponivel    Boolean        @default(true)
+  id            Int            @id @default(autoincrement())
+  produtoId     Int
+  corId         Int?
+  tamanhoId     Int
   itensCarrinho ItemCarrinho[]
+  cor           Cor?           @relation(fields: [corId], references: [id])
+  produto       Produto        @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  tamanho       Tamanho        @relation(fields: [tamanhoId], references: [id])
 
   @@unique([produtoId, corId, tamanhoId])
 }
 
 model ProdutoImagem {
-  id         Int    @id @default(autoincrement())
-  imagemUrl  String
-  produtoId  Int
-  corId      Int?
-
-  produto Produto @relation(fields: [produtoId], references: [id], onDelete: Cascade)
-  cor     Cor?    @relation(fields: [corId], references: [id])
-
-  criadoEm DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  imagemUrl String
+  produtoId Int
+  corId     Int?
+  criadoEm  DateTime @default(now())
+  cor       Cor?     @relation(fields: [corId], references: [id])
+  produto   Produto  @relation(fields: [produtoId], references: [id], onDelete: Cascade)
 }
 
 model Favorito {
+  criadoEm  DateTime @default(now())
   id        Int      @id @default(autoincrement())
   usuarioId Int
   produtoId Int
-  criadoEm  DateTime @default(now())
-
-  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  produto Produto @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  produto   Produto  @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
   @@unique([usuarioId, produtoId])
 }
 
 model Avaliacao {
-  id         Int      @id @default(autoincrement())
   nota       Int
   comentario String?
+  criadoEm   DateTime @default(now())
+  id         Int      @id @default(autoincrement())
   usuarioId  Int
   produtoId  Int
-  criadoEm   DateTime @default(now())
-
-  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  produto Produto @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  produto    Produto  @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  usuario    Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
   @@unique([usuarioId, produtoId])
 }
 
 model Carrinho {
-  id           Int      @id @default(autoincrement())
+  finalizado   Boolean        @default(false)
+  criadoEm     DateTime       @default(now())
+  atualizadoEm DateTime       @updatedAt
+  id           Int            @id @default(autoincrement())
   usuarioId    Int
-  finalizado   Boolean  @default(false)
-  criadoEm     DateTime @default(now())
-  atualizadoEm DateTime @updatedAt
-
-  usuario Usuario        @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  itens   ItemCarrinho[]
+  usuario      Usuario        @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  itens        ItemCarrinho[]
 }
 
 model ItemCarrinho {
-  id                 Int @id @default(autoincrement())
-  carrinhoId         Int
-  produtoVariacaoId  Int
-  quantidade         Int @default(1)
-
-  carrinho         Carrinho        @relation(fields: [carrinhoId], references: [id], onDelete: Cascade)
-  produtoVariacao  ProdutoVariacao @relation(fields: [produtoVariacaoId], references: [id])
+  quantidade        Int             @default(1)
+  produtoVariacaoId Int
+  id                Int             @id @default(autoincrement())
+  carrinhoId        Int
+  carrinho          Carrinho        @relation(fields: [carrinhoId], references: [id], onDelete: Cascade)
+  produtoVariacao   ProdutoVariacao @relation(fields: [produtoVariacaoId], references: [id])
 
   @@unique([carrinhoId, produtoVariacaoId])
+}
+
+enum Role {
+  CLIENTE
+  ADMIN
 }
