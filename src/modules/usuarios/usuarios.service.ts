@@ -8,7 +8,7 @@ interface cadastraUsuarioData {
 }
 
 export async function cadastraUsuario(data: cadastraUsuarioData) {
-
+ 
   const usuarioExistente = await prisma.usuario.findUnique({
     where: {
       email: data.email,
