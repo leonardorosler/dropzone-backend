@@ -15,8 +15,8 @@ export async function loginController(req: Request, res: Response){
 
         const resultado = await realizarLogin({
             email,
-            senha
-        })
+            senha,
+        });
 
         return(res.status(200).json(resultado))
 

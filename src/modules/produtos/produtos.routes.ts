@@ -1,5 +1,5 @@
 import { Router } from "express";
-
+import { authMiddleware, adminMiddleware } from "../../middlewares/auth.middleware.js";
 import {
     atualizarDisponibilidadeProdutoController,
     atualizarProdutoController,
@@ -10,19 +10,19 @@ import {
 
 export const produtosRoutes = Router();
 ///incluir produto
-produtosRoutes.post("/", criarProdutoController);
+produtosRoutes.post("/", authMiddleware, adminMiddleware, criarProdutoController);
 
 //listar produto
 produtosRoutes.get("/", listarProdutosController);
 
 ///editar produto existente
-produtosRoutes.put("/:id", atualizarProdutoController);
+produtosRoutes.put("/:id", authMiddleware, adminMiddleware, atualizarProdutoController);
 
 
 // atualizar disponibilidade 
-produtosRoutes.patch(  "/:id/disponibilidade", atualizarDisponibilidadeProdutoController);
+produtosRoutes.patch(  "/:id/disponibilidade", authMiddleware, adminMiddleware, atualizarDisponibilidadeProdutoController);
 
 
 //************* cuidado ************ */
 ///deleta do banco
-produtosRoutes.delete("/:id", deletarProdutoController);
+produtosRoutes.delete("/:id", authMiddleware, adminMiddleware, deletarProdutoController);
