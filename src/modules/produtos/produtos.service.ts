@@ -34,7 +34,6 @@ export async function criarProduto(data: CriarProdutoData) {
       nome: data.nome,
       descricao: data.descricao,
       preco: data.preco,
-      imagemUrl: data.imagemUrl,
       categoriaId: data.categoriaId,
     },
   });

@@ -1,9 +1,8 @@
 import { Router } from "express";
 import { authMiddleware } from "../../middlewares/auth.middleware.js";
-import { adminMiddleware } from "../../middlewares/admin.middleware .js";
-import {
-    atualizarDisponibilidadeProdutoController,
-    atualizarProdutoController,
+import { adminMiddleware } from "../../middlewares/admin.middleware.js";
+import {    atualizarDisponibilidadeProdutoController,
+  atualizarProdutoController,
   criarProdutoController,
   deletarProdutoController,
   listarProdutosController,
