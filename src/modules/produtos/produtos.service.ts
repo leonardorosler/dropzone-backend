@@ -15,8 +15,16 @@ interface AtualizarProdutoData {
   categoriaId: number;
 }
 
-
-//cria produtos no banco
+const produtoInclude = {
+  categoria: true,
+  imagens: true,
+  variacoes: {
+    include: {
+      cor: true,
+      tamanho: true,
+    },
+  },
+};
 
 export async function criarProduto(data: CriarProdutoData) {
   const categoria = await prisma.categoria.findUnique({
@@ -34,37 +42,50 @@ export async function criarProduto(data: CriarProdutoData) {
       nome: data.nome,
       descricao: data.descricao,
       preco: data.preco,
-      imagemUrl: data.imagemUrl,
       categoriaId: data.categoriaId,
+      imagens: data.imagemUrl
+        ? {
+            create: {
+              imagemUrl: data.imagemUrl,
+            },
+          }
+        : undefined,
     },
+    include: produtoInclude,
   });
 
   return produto;
- 
 }
-
-
-//lista produtos no  banco em ordem asc
 
 export async function listarProdutos() {
   const produtos = await prisma.produto.findMany({
     orderBy: {
       nome: "asc",
     },
+    include: produtoInclude,
   });
 
   return produtos;
 }
 
+export async function buscarProdutoPorId(id: number) {
+  const produto = await prisma.produto.findUnique({
+    where: {
+      id,
+    },
+    include: produtoInclude,
+  });
 
-//atualiza produtos no banco pelo id
+  return produto;
+}
+
 export async function atualizarProduto(
   id: number,
   data: AtualizarProdutoData
 ) {
   const produto = await prisma.produto.update({
     where: {
-      id: id,
+      id,
     },
     data: {
       nome: data.nome,
@@ -72,13 +93,12 @@ export async function atualizarProduto(
       preco: data.preco,
       categoriaId: data.categoriaId,
     },
+    include: produtoInclude,
   });
 
   return produto;
 }
 
-
-// altera a disponibilidade do produto disponivel :true | indisponivel :false
 export async function atualizarDisponibilidadeProduto(
   id: number,
   disponivel: boolean
@@ -90,20 +110,17 @@ export async function atualizarDisponibilidadeProduto(
     data: {
       disponivel,
     },
+    include: produtoInclude,
   });
 
   return produto;
 }
 
-
-
-//deleta produtos do banco 
 export async function deletarProduto(id: number) {
   const produto = await prisma.produto.delete({
     where: {
       id,
     },
-
   });
 
   return produto;

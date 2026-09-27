@@ -1,22 +1,20 @@
 import type { Request, Response } from "express";
-import { atualizarDisponibilidadeProduto, atualizarProduto, criarProduto, deletarProduto, listarProdutos } from "./produtos.service.js";
+import {
+  atualizarDisponibilidadeProduto,
+  atualizarProduto,
+  buscarProdutoPorId,
+  criarProduto,
+  deletarProduto,
+  listarProdutos,
+} from "./produtos.service.js";
 
-export async function criarProdutoController(  req: Request,  res: Response) 
-{
+export async function criarProdutoController(req: Request, res: Response) {
   try {
-    
-    const {
-      nome,
-      descricao,
-      preco,
-      imagemUrl,
-      categoriaId,
-    } = req.body;
+    const { nome, descricao, preco, imagemUrl, categoriaId } = req.body;
 
     if (!nome || !descricao || preco === undefined || !categoriaId) {
       return res.status(400).json({
-        mensagem:
-          "nome, descrição, preço e categoriaId são obrigatórios",
+        mensagem: "nome, descrição, preço e categoriaId são obrigatórios",
       });
     }
 
@@ -25,7 +23,7 @@ export async function criarProdutoController(  req: Request,  res: Response)
       descricao,
       preco: Number(preco),
       imagemUrl,
-      categoriaId,
+      categoriaId: Number(categoriaId),
     });
 
     if (!produto) {
@@ -44,11 +42,7 @@ export async function criarProdutoController(  req: Request,  res: Response)
   }
 }
 
-
-export async function listarProdutosController(
-  _req: Request,  res: Response)
-
-  {
+export async function listarProdutosController(_req: Request, res: Response) {
   try {
     const produtos = await listarProdutos();
 
@@ -62,6 +56,37 @@ export async function listarProdutosController(
   }
 }
 
+export async function buscarProdutoPorIdController(
+  req: Request,
+  res: Response
+) {
+  try {
+    const id = Number(req.params.id);
+
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({
+        mensagem: "ID inválido.",
+      });
+    }
+
+    const produto = await buscarProdutoPorId(id);
+
+    if (!produto) {
+      return res.status(404).json({
+        mensagem: "Produto não encontrado.",
+      });
+    }
+
+    return res.status(200).json(produto);
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      mensagem: "Erro ao buscar produto.",
+    });
+  }
+}
+
 export async function atualizarProdutoController(
   req: Request,
   res: Response
@@ -69,7 +94,18 @@ export async function atualizarProdutoController(
   try {
     const id = Number(req.params.id);
 
-    const produto = await atualizarProduto(id, req.body);
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({
+        mensagem: "ID inválido.",
+      });
+    }
+
+    const produto = await atualizarProduto(id, {
+      nome: req.body.nome,
+      descricao: req.body.descricao,
+      preco: Number(req.body.preco),
+      categoriaId: Number(req.body.categoriaId),
+    });
 
     return res.status(200).json(produto);
   } catch (error) {
@@ -81,7 +117,6 @@ export async function atualizarProdutoController(
   }
 }
 
-// atualiza disponibilidade do produto
 export async function atualizarDisponibilidadeProdutoController(
   req: Request,
   res: Response
@@ -102,10 +137,7 @@ export async function atualizarDisponibilidadeProdutoController(
       });
     }
 
-    const produto = await atualizarDisponibilidadeProduto(
-      id,
-      disponivel
-    );
+    const produto = await atualizarDisponibilidadeProduto(id, disponivel);
 
     return res.status(200).json(produto);
   } catch (error) {
@@ -117,12 +149,7 @@ export async function atualizarDisponibilidadeProdutoController(
   }
 }
 
-
-// deletar do banco
-export async function deletarProdutoController(
-  req: Request,
-  res: Response
-) {
+export async function deletarProdutoController(req: Request, res: Response) {
   try {
     const id = Number(req.params.id);
 
