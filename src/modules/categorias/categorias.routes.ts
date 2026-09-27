@@ -5,7 +5,6 @@ import { atualizarCategoriaController, criarCategoriaController, deletarCategori
 import { authMiddleware } from "../../middlewares/auth.middleware.js";
 import { adminMiddleware } from "../../middlewares/admin.middleware.js";
 
-
 export const categoriasRoutes = Router();
 
 categoriasRoutes.get("/", listarCategoriaController); //feito
