@@ -1,12 +1,9 @@
 import { Router } from "express";
-import { cadastraUsuarioController } from "./usuarios.controller.js";
+import {buscarUsuarioLogadoController, cadastraUsuarioController } from "./usuarios.controller.js";
+import { authMiddleware } from "../../middlewares/auth.middleware.js";
 
-export const usuariosRoutes = Router()
+export const usuariosRoutes = Router();
 
-usuariosRoutes.post("/", cadastraUsuarioController) //cadastra usuário
+usuariosRoutes.post("/", cadastraUsuarioController);
 
-//get usuarios/me -> receber dados do usuario autenticado
-
-//put usuarios/me -> atualizar dados do usuario autenticado
-
-//delete usuarios/me-> excluir ou desativar a propria conta
+usuariosRoutes.get("/me", authMiddleware, buscarUsuarioLogadoController);
