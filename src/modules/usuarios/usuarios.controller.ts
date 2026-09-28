@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { cadastraUsuario, buscarUsuarioPorId } from "./usuarios.service.js";
+import { cadastraUsuario, buscarUsuarioPorId , listarInteracoesUsuario} from "./usuarios.service.js";
 
 export async function cadastraUsuarioController(req: Request, res: Response) {
   try {
@@ -60,6 +60,31 @@ export async function buscarUsuarioLogadoController(
 
     return res.status(500).json({
       mensagem: "Erro ao buscar usuário logado.",
+    });
+  }
+}
+
+export async function listarInteracoesUsuarioController(
+  req: Request,
+  res: Response
+) {
+  try {
+    const usuarioId = Number(req.usuarioId);
+
+    if (!Number.isInteger(usuarioId)) {
+      return res.status(401).json({
+        mensagem: "Usuário não autenticado.",
+      });
+    }
+
+    const interacoes = await listarInteracoesUsuario(usuarioId);
+
+    return res.status(200).json(interacoes);
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      mensagem: "Erro ao listar interações do usuário.",
     });
   }
 }

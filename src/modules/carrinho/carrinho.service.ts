@@ -31,6 +31,55 @@ const carrinhoInclude = {
   },
 };
 
+function formatarPreco(valor: unknown) {
+  return Number(valor).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+}
+
+function gerarMensagemWhatsApp(carrinho: {
+  itens: Array<{
+    quantidade: number;
+    produtoVariacao: {
+      produto: {
+        nome: string;
+        preco: unknown;
+      };
+      cor: {
+        nome: string;
+      } | null;
+      tamanho: {
+        nome: string;
+      };
+    };
+  }>;
+}) {
+  const linhas = carrinho.itens.map((item) => {
+    const produto = item.produtoVariacao.produto;
+    const cor = item.produtoVariacao.cor?.nome ?? "Sem cor";
+    const tamanho = item.produtoVariacao.tamanho.nome;
+    const precoUnitario = Number(produto.preco);
+    const subtotal = precoUnitario * item.quantidade;
+
+    return `- ${produto.nome} | Cor: ${cor} | Tamanho: ${tamanho} | Quantidade: ${item.quantidade} | Valor: ${formatarPreco(subtotal)}`;
+  });
+
+  const total = carrinho.itens.reduce((soma, item) => {
+    return soma + Number(item.produtoVariacao.produto.preco) * item.quantidade;
+  }, 0);
+
+  return [
+    "Olá! Tenho interesse nestas peças:",
+    "",
+    ...linhas,
+    "",
+    `Total aproximado: ${formatarPreco(total)}`,
+    "",
+    "Gostaria de saber mais sobre o pedido.",
+  ].join("\n");
+}
+
 export async function buscarOuCriarCarrinho(usuarioId: number) {
   let carrinho = await prisma.carrinho.findFirst({
     where: {
@@ -189,5 +238,18 @@ export async function finalizarCarrinho(usuarioId: number) {
     include: carrinhoInclude,
   });
 
-  return carrinhoFinalizado;
+  const mensagemWhatsApp = gerarMensagemWhatsApp(carrinhoFinalizado);
+
+  const telefoneLoja = process.env.WHATSAPP_LOJA ?? "";
+  const textoEncoded = encodeURIComponent(mensagemWhatsApp);
+
+  const linkWhatsApp = telefoneLoja
+    ? `https://wa.me/${telefoneLoja}?text=${textoEncoded}`
+    : `https://wa.me/?text=${textoEncoded}`;
+
+  return {
+    carrinho: carrinhoFinalizado,
+    mensagemWhatsApp,
+    linkWhatsApp,
+  };
 }
