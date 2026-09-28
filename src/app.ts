@@ -6,6 +6,9 @@ import { produtosRoutes } from "./modules/produtos/produtos.routes.js"
 import { usuariosRoutes } from "./modules/usuarios/usuarios.routes.js"
 import { authRoutes } from "./modules/auth/auth.routes.js"
 import { favoritosRoutes } from "./modules/favoritos/favoritos.routes.js"
+import { coresRoutes } from "./modules/cores/cores.routes.js"
+import { tamanhosRoutes } from "./modules/tamanhos/tamanhos.routes.js"
+import { avaliacoesRoutes } from "./modules/avaliacoes/avaliacoes.routes.js"
 
 
 export const app = express()
@@ -22,3 +25,6 @@ app.use("/produtos", produtosRoutes);
 app.use("/usuarios", usuariosRoutes)
 app.use("/auth", authRoutes);
 app.use("/favoritos", favoritosRoutes);
+app.use("/cores", coresRoutes);
+app.use("/tamanhos", tamanhosRoutes);
+app.use("/avaliacoes", avaliacoesRoutes);
