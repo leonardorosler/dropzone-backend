@@ -9,6 +9,7 @@ import { favoritosRoutes } from "./modules/favoritos/favoritos.routes.js"
 import { coresRoutes } from "./modules/cores/cores.routes.js"
 import { tamanhosRoutes } from "./modules/tamanhos/tamanhos.routes.js"
 import { avaliacoesRoutes } from "./modules/avaliacoes/avaliacoes.routes.js"
+import { carrinhoRoutes } from "./modules/carrinho/carrinho.routes.js"
 
 
 export const app = express()
@@ -28,3 +29,4 @@ app.use("/favoritos", favoritosRoutes);
 app.use("/cores", coresRoutes);
 app.use("/tamanhos", tamanhosRoutes);
 app.use("/avaliacoes", avaliacoesRoutes);
+app.use("/carrinho", carrinhoRoutes);

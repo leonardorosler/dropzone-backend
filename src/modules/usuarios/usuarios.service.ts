@@ -39,3 +39,21 @@ export async function cadastraUsuario(data: cadastraUsuarioData) {
 
   return usuario;
 }
+
+export async function buscarUsuarioPorId(id: number) {
+  const usuario = await prisma.usuario.findUnique({
+    where: {
+      id,
+    },
+    select: {
+      id: true,
+      nome: true,
+      email: true,
+      role: true,
+      criadoEm: true,
+      atualizadoEm: true,
+    },
+  });
+
+  return usuario;
+}
