@@ -49,12 +49,36 @@ export async function criarProdutoController(req: Request, res: Response) {
 
 export async function listarProdutosController(req: Request, res: Response) {
   try {
+    const busca =
+      typeof req.query.busca === "string" && req.query.busca.trim()
+        ? req.query.busca.trim()
+        : undefined;
+
+    const categoriaId =
+      typeof req.query.categoriaId === "string"
+        ? Number(req.query.categoriaId)
+        : undefined;
+
+    const disponivel =
+      req.query.disponivel === undefined
+        ? undefined
+        : req.query.disponivel === "true";
+
     const destaque =
       req.query.destaque === undefined
         ? undefined
         : req.query.destaque === "true";
 
+    if (categoriaId !== undefined && !Number.isInteger(categoriaId)) {
+      return res.status(400).json({
+        mensagem: "categoriaId inválido.",
+      });
+    }
+
     const produtos = await listarProdutos({
+      busca,
+      categoriaId,
+      disponivel,
       destaque,
     });
 
