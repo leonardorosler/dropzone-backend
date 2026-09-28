@@ -32,6 +32,7 @@ model Produto {
   descricao    String
   preco        Decimal           @db.Decimal(10, 2)
   disponivel   Boolean           @default(true)
+  destaque     Boolean           @default(false)
   criadoEm     DateTime          @default(now())
   atualizadoEm DateTime          @updatedAt
   id           Int               @id @default(autoincrement())
