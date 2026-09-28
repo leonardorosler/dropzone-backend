@@ -21,6 +21,13 @@ interface ListarProdutosFiltros {
   destaque?: boolean;
 }
 
+interface CriarVariacaoData {
+  produtoId: number;
+  corId?: number | null;
+  tamanhoId: number;
+  disponivel?: boolean;
+}
+
 const produtoInclude = {
   categoria: true,
   imagens: true,
@@ -135,4 +142,58 @@ export async function deletarProduto(id: number) {
   });
 
   return produto;
+}
+
+// Cria uma combinação de produto + cor + tamanho.
+export async function criarVariacaoProduto(data: CriarVariacaoData) {
+  return prisma.produtoVariacao.create({
+    data: {
+      produtoId: data.produtoId,
+      corId: data.corId ?? null,
+      tamanhoId: data.tamanhoId,
+      disponivel: data.disponivel ?? true,
+    },
+    include: {
+      produto: true,
+      cor: true,
+      tamanho: true,
+    },
+  });
+}
+
+// Lista todas as variações de um produto já com cor e tamanho.
+export async function listarVariacoesProduto(produtoId: number) {
+  return prisma.produtoVariacao.findMany({
+    where: {
+      produtoId,
+    },
+    include: {
+      produto: true,
+      cor: true,
+      tamanho: true,
+    },
+    orderBy: {
+      id: "asc",
+    },
+  });
+}
+
+// Permite ao admin ativar ou desativar somente uma variação.
+export async function atualizarDisponibilidadeVariacao(
+  id: number,
+  disponivel: boolean
+) {
+  return prisma.produtoVariacao.update({
+    where: {
+      id,
+    },
+    data: {
+      disponivel,
+    },
+    include: {
+      produto: true,
+      cor: true,
+      tamanho: true,
+    },
+  });
 }
