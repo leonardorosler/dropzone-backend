@@ -6,6 +6,7 @@ interface CriarProdutoData {
   preco: number;
   imagemUrl?: string;
   categoriaId: number;
+  destaque?: boolean;
 }
 
 interface AtualizarProdutoData {
@@ -13,6 +14,11 @@ interface AtualizarProdutoData {
   descricao: string;
   preco: number;
   categoriaId: number;
+  destaque?: boolean;
+}
+
+interface ListarProdutosFiltros {
+  destaque?: boolean;
 }
 
 const produtoInclude = {
@@ -43,6 +49,7 @@ export async function criarProduto(data: CriarProdutoData) {
       descricao: data.descricao,
       preco: data.preco,
       categoriaId: data.categoriaId,
+      destaque: data.destaque ?? false,
       imagens: data.imagemUrl
         ? {
             create: {
@@ -57,8 +64,11 @@ export async function criarProduto(data: CriarProdutoData) {
   return produto;
 }
 
-export async function listarProdutos() {
+export async function listarProdutos(filtros: ListarProdutosFiltros = {}) {
   const produtos = await prisma.produto.findMany({
+    where: {
+      destaque: filtros.destaque,
+    },
     orderBy: {
       nome: "asc",
     },
@@ -92,6 +102,7 @@ export async function atualizarProduto(
       descricao: data.descricao,
       preco: data.preco,
       categoriaId: data.categoriaId,
+      destaque: data.destaque,
     },
     include: produtoInclude,
   });

@@ -10,7 +10,7 @@ import {
 
 export async function criarProdutoController(req: Request, res: Response) {
   try {
-    const { nome, descricao, preco, imagemUrl, categoriaId } = req.body;
+    const { nome, descricao, preco, imagemUrl, categoriaId, destaque } = req.body;
 
     if (!nome || !descricao || preco === undefined || !categoriaId) {
       return res.status(400).json({
@@ -24,6 +24,7 @@ export async function criarProdutoController(req: Request, res: Response) {
       preco: Number(preco),
       imagemUrl,
       categoriaId: Number(categoriaId),
+      destaque: Boolean(destaque),
     });
 
     if (!produto) {
@@ -42,9 +43,16 @@ export async function criarProdutoController(req: Request, res: Response) {
   }
 }
 
-export async function listarProdutosController(_req: Request, res: Response) {
+export async function listarProdutosController(req: Request, res: Response) {
   try {
-    const produtos = await listarProdutos();
+    const destaque =
+      req.query.destaque === undefined
+        ? undefined
+        : req.query.destaque === "true";
+
+    const produtos = await listarProdutos({
+      destaque,
+    });
 
     return res.status(200).json(produtos);
   } catch (error) {
@@ -105,6 +113,8 @@ export async function atualizarProdutoController(
       descricao: req.body.descricao,
       preco: Number(req.body.preco),
       categoriaId: Number(req.body.categoriaId),
+      destaque:
+        req.body.destaque === undefined ? undefined : Boolean(req.body.destaque),
     });
 
     return res.status(200).json(produto);
