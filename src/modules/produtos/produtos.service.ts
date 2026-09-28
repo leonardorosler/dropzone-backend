@@ -40,7 +40,31 @@ const produtoInclude = {
       tamanho: true,
     },
   },
+  avaliacoes: {
+    select: {
+      nota: true,
+    },
+  },
 };
+
+function adicionarMediaAvaliacoes<T extends { avaliacoes?: { nota: number }[] }>(
+  produto: T
+) {
+  const avaliacoes = produto.avaliacoes ?? [];
+  const totalAvaliacoes = avaliacoes.length;
+
+  const mediaAvaliacoes =
+    totalAvaliacoes === 0
+      ? 0
+      : avaliacoes.reduce((soma, avaliacao) => soma + avaliacao.nota, 0) /
+        totalAvaliacoes;
+
+  return {
+    ...produto,
+    mediaAvaliacoes,
+    totalAvaliacoes,
+  };
+}
 
 export async function criarProduto(data: CriarProdutoData) {
   const categoria = await prisma.categoria.findUnique({
@@ -71,7 +95,7 @@ export async function criarProduto(data: CriarProdutoData) {
     include: produtoInclude,
   });
 
-  return produto;
+  return adicionarMediaAvaliacoes(produto);
 }
 
 export async function listarProdutos(filtros: ListarProdutosFiltros = {}) {
@@ -93,7 +117,7 @@ export async function listarProdutos(filtros: ListarProdutosFiltros = {}) {
     include: produtoInclude,
   });
 
-  return produtos;
+  return produtos.map(adicionarMediaAvaliacoes);
 }
 
 export async function buscarProdutoPorId(id: number) {
@@ -125,7 +149,7 @@ export async function atualizarProduto(
     include: produtoInclude,
   });
 
-  return produto;
+  return produto ? adicionarMediaAvaliacoes(produto) : null;
 }
 
 export async function atualizarDisponibilidadeProduto(
@@ -142,7 +166,7 @@ export async function atualizarDisponibilidadeProduto(
     include: produtoInclude,
   });
 
-  return produto;
+  return adicionarMediaAvaliacoes(produto);
 }
 
 export async function deletarProduto(id: number) {
