@@ -18,6 +18,9 @@ interface AtualizarProdutoData {
 }
 
 interface ListarProdutosFiltros {
+  busca?: string;
+  categoriaId?: number;
+  disponivel?: boolean;
   destaque?: boolean;
 }
 
@@ -74,6 +77,14 @@ export async function criarProduto(data: CriarProdutoData) {
 export async function listarProdutos(filtros: ListarProdutosFiltros = {}) {
   const produtos = await prisma.produto.findMany({
     where: {
+      nome: filtros.busca
+        ? {
+            contains: filtros.busca,
+            mode: "insensitive",
+          }
+        : undefined,
+      categoriaId: filtros.categoriaId,
+      disponivel: filtros.disponivel,
       destaque: filtros.destaque,
     },
     orderBy: {
