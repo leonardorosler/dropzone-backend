@@ -57,3 +57,75 @@ export async function buscarUsuarioPorId(id: number) {
 
   return usuario;
 }
+
+export async function listarInteracoesUsuario(usuarioId: number) {
+  const [favoritos, avaliacoes, carrinhosFinalizados] = await Promise.all([
+    prisma.favorito.findMany({
+      where: {
+        usuarioId,
+      },
+      include: {
+        produto: {
+          include: {
+            imagens: true,
+            categoria: true,
+          },
+        },
+      },
+      orderBy: {
+        criadoEm: "desc",
+      },
+    }),
+
+    prisma.avaliacao.findMany({
+      where: {
+        usuarioId,
+      },
+      include: {
+        produto: {
+          include: {
+            imagens: true,
+            categoria: true,
+          },
+        },
+      },
+      orderBy: {
+        criadoEm: "desc",
+      },
+    }),
+
+    prisma.carrinho.findMany({
+      where: {
+        usuarioId,
+        finalizado: true,
+      },
+      include: {
+        itens: {
+          include: {
+            produtoVariacao: {
+              include: {
+                produto: {
+                  include: {
+                    imagens: true,
+                    categoria: true,
+                  },
+                },
+                cor: true,
+                tamanho: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        atualizadoEm: "desc",
+      },
+    }),
+  ]);
+
+  return {
+    favoritos,
+    avaliacoes,
+    carrinhosFinalizados,
+  };
+}
