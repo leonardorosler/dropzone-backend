@@ -1,193 +1,174 @@
 import { prisma } from "../../database/prisma.js";
 
-interface AdicionarItemData {
-  usuarioId: number;
-  produtoVariacaoId: number;
-  quantidade?: number;
+function formatarPreco(valor: number) {
+  return valor.toFixed(2).replace(".", ",");
 }
 
-interface AtualizarItemData {
-  usuarioId: number;
-  itemId: number;
-  quantidade: number;
+function obterNumeroWhatsApp() {
+  const numero = process.env.WHATSAPP_NUMERO;
+
+  if (!numero) {
+    throw new Error("WHATSAPP_NUMERO_NAO_CONFIGURADO");
+  }
+
+  return numero.replace(/\D/g, "");
 }
 
-const carrinhoInclude = {
-  itens: {
+async function buscarCarrinhoAberto(usuarioId: number) {
+  return prisma.carrinho.findFirst({
+    where: {
+      usuarioId,
+      finalizado: false,
+    },
+    orderBy: {
+      criadoEm: "desc",
+    },
+  });
+}
+
+async function obterOuCriarCarrinho(usuarioId: number) {
+  const carrinhoExistente = await buscarCarrinhoAberto(
+    usuarioId
+  );
+
+  if (carrinhoExistente) {
+    return carrinhoExistente;
+  }
+
+  return prisma.carrinho.create({
+    data: {
+      usuarioId,
+    },
+  });
+}
+
+export async function listarCarrinho(usuarioId: number) {
+  return prisma.carrinho.findFirst({
+    where: {
+      usuarioId,
+      finalizado: false,
+    },
+    include: {
+      itens: {
+        include: {
+          produtoVariacao: {
+            include: {
+              produto: true,
+              cor: true,
+              tamanho: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      criadoEm: "desc",
+    },
+  });
+}
+
+export async function adicionarItemCarrinho(
+  usuarioId: number,
+  produtoVariacaoId: number,
+  quantidade: number
+) {
+  const variacao = await prisma.produtoVariacao.findUnique({
+    where: {
+      id: produtoVariacaoId,
+    },
+  });
+
+  if (!variacao) {
+    throw new Error("VARIACAO_NAO_ENCONTRADA");
+  }
+
+  if (!variacao.disponivel) {
+    throw new Error("VARIACAO_INDISPONIVEL");
+  }
+
+  const carrinho = await obterOuCriarCarrinho(usuarioId);
+
+  const itemExistente = await prisma.itemCarrinho.findUnique({
+    where: {
+      carrinhoId_produtoVariacaoId: {
+        carrinhoId: carrinho.id,
+        produtoVariacaoId,
+      },
+    },
+  });
+
+  if (itemExistente) {
+    return prisma.itemCarrinho.update({
+      where: {
+        id: itemExistente.id,
+      },
+      data: {
+        quantidade:
+          itemExistente.quantidade + quantidade,
+      },
+      include: {
+        produtoVariacao: {
+          include: {
+            produto: true,
+            cor: true,
+            tamanho: true,
+          },
+        },
+      },
+    });
+  }
+
+  return prisma.itemCarrinho.create({
+    data: {
+      carrinhoId: carrinho.id,
+      produtoVariacaoId,
+      quantidade,
+    },
     include: {
       produtoVariacao: {
         include: {
-          produto: {
-            include: {
-              imagens: true,
-              categoria: true,
-            },
-          },
+          produto: true,
           cor: true,
           tamanho: true,
         },
       },
     },
-  },
-};
-
-function formatarPreco(valor: unknown) {
-  return Number(valor).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
   });
 }
 
-function gerarMensagemWhatsApp(carrinho: {
-  itens: Array<{
-    quantidade: number;
-    produtoVariacao: {
-      produto: {
-        nome: string;
-        preco: unknown;
-      };
-      cor: {
-        nome: string;
-      } | null;
-      tamanho: {
-        nome: string;
-      };
-    };
-  }>;
-}) {
-  const linhas = carrinho.itens.map((item) => {
-    const produto = item.produtoVariacao.produto;
-    const cor = item.produtoVariacao.cor?.nome ?? "Sem cor";
-    const tamanho = item.produtoVariacao.tamanho.nome;
-    const precoUnitario = Number(produto.preco);
-    const subtotal = precoUnitario * item.quantidade;
-
-    return `- ${produto.nome} | Cor: ${cor} | Tamanho: ${tamanho} | Quantidade: ${item.quantidade} | Valor: ${formatarPreco(subtotal)}`;
-  });
-
-  const total = carrinho.itens.reduce((soma, item) => {
-    return soma + Number(item.produtoVariacao.produto.preco) * item.quantidade;
-  }, 0);
-
-  return [
-    "Olá! Tenho interesse nestas peças:",
-    "",
-    ...linhas,
-    "",
-    `Total aproximado: ${formatarPreco(total)}`,
-    "",
-    "Gostaria de saber mais sobre o pedido.",
-  ].join("\n");
-}
-
-export async function buscarOuCriarCarrinho(usuarioId: number) {
-  let carrinho = await prisma.carrinho.findFirst({
+export async function atualizarQuantidadeItem(
+  usuarioId: number,
+  itemId: number,
+  quantidade: number
+) {
+  const item = await prisma.itemCarrinho.findFirst({
     where: {
-      usuarioId,
-      finalizado: false,
-    },
-    include: carrinhoInclude,
-  });
-
-  if (!carrinho) {
-    carrinho = await prisma.carrinho.create({
-      data: {
+      id: itemId,
+      carrinho: {
         usuarioId,
+        finalizado: false,
       },
-      include: carrinhoInclude,
-    });
-  }
-
-  return carrinho;
-}
-
-export async function listarCarrinho(usuarioId: number) {
-  return buscarOuCriarCarrinho(usuarioId);
-}
-
-export async function adicionarItemCarrinho(data: AdicionarItemData) {
-  const quantidade = data.quantidade ?? 1;
-
-  if (quantidade <= 0) {
-    throw new Error("Quantidade inválida");
-  }
-
-  const variacao = await prisma.produtoVariacao.findUnique({
-    where: {
-      id: data.produtoVariacaoId,
     },
   });
 
-  if (!variacao) {
-    throw new Error("Variação não encontrada");
+  if (!item) {
+    throw new Error("ITEM_NAO_ENCONTRADO");
   }
 
-  if (!variacao.disponivel) {
-    throw new Error("Variação indisponível");
-  }
-
-  const carrinho = await buscarOuCriarCarrinho(data.usuarioId);
-
-  await prisma.itemCarrinho.upsert({
+  return prisma.itemCarrinho.update({
     where: {
-      carrinhoId_produtoVariacaoId: {
-        carrinhoId: carrinho.id,
-        produtoVariacaoId: data.produtoVariacaoId,
-      },
+      id: itemId,
     },
-    update: {
-      quantidade: {
-        increment: quantidade,
-      },
-    },
-    create: {
-      carrinhoId: carrinho.id,
-      produtoVariacaoId: data.produtoVariacaoId,
+    data: {
       quantidade,
     },
   });
-
-  return listarCarrinho(data.usuarioId);
 }
 
-export async function atualizarItemCarrinho(data: AtualizarItemData) {
-  const item = await prisma.itemCarrinho.findFirst({
-    where: {
-      id: data.itemId,
-      carrinho: {
-        usuarioId: data.usuarioId,
-        finalizado: false,
-      },
-    },
-  });
-
-  if (!item) {
-    return null;
-  }
-
-  if (data.quantidade <= 0) {
-    await prisma.itemCarrinho.delete({
-      where: {
-        id: data.itemId,
-      },
-    });
-
-    return listarCarrinho(data.usuarioId);
-  }
-
-  await prisma.itemCarrinho.update({
-    where: {
-      id: data.itemId,
-    },
-    data: {
-      quantidade: data.quantidade,
-    },
-  });
-
-  return listarCarrinho(data.usuarioId);
-}
-
-export async function removerItemCarrinho(usuarioId: number, itemId: number) {
+export async function removerItemCarrinho(
+  usuarioId: number,
+  itemId: number
+) {
   const item = await prisma.itemCarrinho.findFirst({
     where: {
       id: itemId,
@@ -199,57 +180,102 @@ export async function removerItemCarrinho(usuarioId: number, itemId: number) {
   });
 
   if (!item) {
-    return null;
+    throw new Error("ITEM_NAO_ENCONTRADO");
   }
 
-  await prisma.itemCarrinho.delete({
+  return prisma.itemCarrinho.delete({
     where: {
       id: itemId,
     },
   });
-
-  return listarCarrinho(usuarioId);
 }
 
-export async function finalizarCarrinho(usuarioId: number) {
+export async function gerarPedidoWhatsApp(
+  usuarioId: number
+) {
   const carrinho = await prisma.carrinho.findFirst({
     where: {
       usuarioId,
       finalizado: false,
     },
-    include: carrinhoInclude,
+    include: {
+      itens: {
+        include: {
+          produtoVariacao: {
+            include: {
+              produto: true,
+              cor: true,
+              tamanho: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      criadoEm: "desc",
+    },
   });
 
   if (!carrinho) {
-    return null;
+    throw new Error("CARRINHO_NAO_ENCONTRADO");
   }
 
   if (carrinho.itens.length === 0) {
-    throw new Error("Carrinho vazio");
+    throw new Error("CARRINHO_VAZIO");
   }
 
-  const carrinhoFinalizado = await prisma.carrinho.update({
-    where: {
-      id: carrinho.id,
+  const itensMensagem = carrinho.itens.map(
+    (item, index) => {
+      const variacao = item.produtoVariacao;
+      const produto = variacao.produto;
+
+      const precoUnitario = Number(produto.preco);
+      const subtotal =
+        precoUnitario * item.quantidade;
+
+      return [
+        `${index + 1}. ${produto.nome}`,
+        `Cor: ${variacao.cor?.nome ?? "Não informada"}`,
+        `Tamanho: ${variacao.tamanho.nome}`,
+        `Quantidade: ${item.quantidade}`,
+        `Preço unitário: R$ ${formatarPreco(
+          precoUnitario
+        )}`,
+        `Subtotal: R$ ${formatarPreco(subtotal)}`,
+      ].join("\n");
+    }
+  );
+
+  const total = carrinho.itens.reduce(
+    (soma, item) => {
+      const preco = Number(
+        item.produtoVariacao.produto.preco
+      );
+
+      return soma + preco * item.quantidade;
     },
-    data: {
-      finalizado: true,
-    },
-    include: carrinhoInclude,
-  });
+    0
+  );
 
-  const mensagemWhatsApp = gerarMensagemWhatsApp(carrinhoFinalizado);
+  const mensagem = [
+    "Olá! Gostaria de finalizar meu pedido:",
+    "",
+    itensMensagem.join("\n\n"),
+    "",
+    `Total: R$ ${formatarPreco(total)}`,
+  ].join("\n");
 
-  const telefoneLoja = process.env.WHATSAPP_LOJA ?? "";
-  const textoEncoded = encodeURIComponent(mensagemWhatsApp);
+  const numeroWhatsApp = obterNumeroWhatsApp();
 
-  const linkWhatsApp = telefoneLoja
-    ? `https://wa.me/${telefoneLoja}?text=${textoEncoded}`
-    : `https://wa.me/?text=${textoEncoded}`;
+  const whatsappUrl =
+    `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(
+      mensagem
+    )}`;
 
   return {
-    carrinho: carrinhoFinalizado,
-    mensagemWhatsApp,
-    linkWhatsApp,
+    carrinhoId: carrinho.id,
+    mensagem,
+    whatsappUrl,
+    total,
   };
 }

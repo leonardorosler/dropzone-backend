@@ -1,17 +1,33 @@
 import { Request, Response } from "express";
+import { Prisma } from "../../generated/prisma/client.js";
 import {
   adicionarItemCarrinho,
-  atualizarItemCarrinho,
-  finalizarCarrinho,
+  atualizarQuantidadeItem,
+  gerarPedidoWhatsApp,
   listarCarrinho,
   removerItemCarrinho,
 } from "./carrinho.service.js";
 
-export async function listarCarrinhoController(req: Request, res: Response) {
+export async function listarCarrinhoController(
+  req: Request,
+  res: Response
+) {
   try {
-    const usuarioId = Number(req.usuarioId);
+    const usuarioId = req.usuarioId;
+
+    if (!usuarioId) {
+      return res.status(401).json({
+        mensagem: "Usuário não autenticado.",
+      });
+    }
 
     const carrinho = await listarCarrinho(usuarioId);
+
+    if (!carrinho) {
+      return res.status(404).json({
+        mensagem: "Carrinho não encontrado.",
+      });
+    }
 
     return res.status(200).json(carrinho);
   } catch (error) {
@@ -28,33 +44,54 @@ export async function adicionarItemCarrinhoController(
   res: Response
 ) {
   try {
-    const usuarioId = Number(req.usuarioId);
+    const usuarioId = req.usuarioId;
     const { produtoVariacaoId, quantidade } = req.body;
 
-    if (!Number.isInteger(Number(produtoVariacaoId))) {
-      return res.status(400).json({
-        mensagem: "produtoVariacaoId é obrigatório.",
+    if (!usuarioId) {
+      return res.status(401).json({
+        mensagem: "Usuário não autenticado.",
       });
     }
 
-    const carrinho = await adicionarItemCarrinho({
-      usuarioId,
-      produtoVariacaoId: Number(produtoVariacaoId),
-      quantidade: quantidade === undefined ? undefined : Number(quantidade),
-    });
+    if (!Number.isInteger(Number(produtoVariacaoId))) {
+      return res.status(400).json({
+        mensagem: "produtoVariacaoId inválido.",
+      });
+    }
 
-    return res.status(201).json(carrinho);
+    if (
+      !Number.isInteger(Number(quantidade)) ||
+      Number(quantidade) <= 0
+    ) {
+      return res.status(400).json({
+        mensagem: "Quantidade deve ser maior que zero.",
+      });
+    }
+
+    const item = await adicionarItemCarrinho(
+      usuarioId,
+      Number(produtoVariacaoId),
+      Number(quantidade)
+    );
+
+    return res.status(201).json(item);
   } catch (error) {
-    if (error instanceof Error) {
-      if (
-        error.message === "Variação não encontrada" ||
-        error.message === "Variação indisponível" ||
-        error.message === "Quantidade inválida"
-      ) {
-        return res.status(400).json({
-          mensagem: error.message,
-        });
-      }
+    if (
+      error instanceof Error &&
+      error.message === "VARIACAO_NAO_ENCONTRADA"
+    ) {
+      return res.status(404).json({
+        mensagem: "Variação do produto não encontrada.",
+      });
+    }
+
+    if (
+      error instanceof Error &&
+      error.message === "VARIACAO_INDISPONIVEL"
+    ) {
+      return res.status(400).json({
+        mensagem: "Essa variação está indisponível.",
+      });
     }
 
     console.error(error);
@@ -65,14 +102,20 @@ export async function adicionarItemCarrinhoController(
   }
 }
 
-export async function atualizarItemCarrinhoController(
+export async function atualizarQuantidadeItemController(
   req: Request,
   res: Response
 ) {
   try {
-    const usuarioId = Number(req.usuarioId);
-    const itemId = Number(req.params.itemId);
+    const usuarioId = req.usuarioId;
+    const itemId = Number(req.params.id);
     const { quantidade } = req.body;
+
+    if (!usuarioId) {
+      return res.status(401).json({
+        mensagem: "Usuário não autenticado.",
+      });
+    }
 
     if (!Number.isInteger(itemId)) {
       return res.status(400).json({
@@ -80,26 +123,32 @@ export async function atualizarItemCarrinhoController(
       });
     }
 
-    if (!Number.isInteger(Number(quantidade))) {
+    if (
+      !Number.isInteger(Number(quantidade)) ||
+      Number(quantidade) <= 0
+    ) {
       return res.status(400).json({
-        mensagem: "Quantidade inválida.",
+        mensagem: "Quantidade deve ser maior que zero.",
       });
     }
 
-    const carrinho = await atualizarItemCarrinho({
+    const item = await atualizarQuantidadeItem(
       usuarioId,
       itemId,
-      quantidade: Number(quantidade),
-    });
+      Number(quantidade)
+    );
 
-    if (!carrinho) {
+    return res.status(200).json(item);
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === "ITEM_NAO_ENCONTRADO"
+    ) {
       return res.status(404).json({
-        mensagem: "Item não encontrado no carrinho.",
+        mensagem: "Item do carrinho não encontrado.",
       });
     }
 
-    return res.status(200).json(carrinho);
-  } catch (error) {
     console.error(error);
 
     return res.status(500).json({
@@ -113,8 +162,14 @@ export async function removerItemCarrinhoController(
   res: Response
 ) {
   try {
-    const usuarioId = Number(req.usuarioId);
-    const itemId = Number(req.params.itemId);
+    const usuarioId = req.usuarioId;
+    const itemId = Number(req.params.id);
+
+    if (!usuarioId) {
+      return res.status(401).json({
+        mensagem: "Usuário não autenticado.",
+      });
+    }
 
     if (!Number.isInteger(itemId)) {
       return res.status(400).json({
@@ -122,16 +177,22 @@ export async function removerItemCarrinhoController(
       });
     }
 
-    const carrinho = await removerItemCarrinho(usuarioId, itemId);
+    const item = await removerItemCarrinho(
+      usuarioId,
+      itemId
+    );
 
-    if (!carrinho) {
+    return res.status(200).json(item);
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === "ITEM_NAO_ENCONTRADO"
+    ) {
       return res.status(404).json({
-        mensagem: "Item não encontrado no carrinho.",
+        mensagem: "Item do carrinho não encontrado.",
       });
     }
 
-    return res.status(200).json(carrinho);
-  } catch (error) {
     console.error(error);
 
     return res.status(500).json({
@@ -140,36 +201,60 @@ export async function removerItemCarrinhoController(
   }
 }
 
-export async function finalizarCarrinhoController(
+export async function gerarPedidoWhatsAppController(
   req: Request,
   res: Response
 ) {
   try {
-    const usuarioId = Number(req.usuarioId);
+    const usuarioId = req.usuarioId;
 
-    const carrinho = await finalizarCarrinho(usuarioId);
+    if (!usuarioId) {
+      return res.status(401).json({
+        mensagem: "Usuário não autenticado.",
+      });
+    }
 
-    if (!carrinho) {
+    const pedido = await gerarPedidoWhatsApp(usuarioId);
+
+    return res.status(200).json(pedido);
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === "CARRINHO_NAO_ENCONTRADO"
+    ) {
       return res.status(404).json({
         mensagem: "Carrinho não encontrado.",
       });
     }
 
-    return res.status(200).json({
-      mensagem: "Carrinho finalizado com sucesso.",
-      carrinho,
-    });
-  } catch (error) {
-    if (error instanceof Error && error.message === "Carrinho vazio") {
+    if (
+      error instanceof Error &&
+      error.message === "CARRINHO_VAZIO"
+    ) {
       return res.status(400).json({
-        mensagem: "Não é possível finalizar um carrinho vazio.",
+        mensagem: "O carrinho está vazio.",
       });
+    }
+
+    if (
+      error instanceof Error &&
+      error.message === "WHATSAPP_NUMERO_NAO_CONFIGURADO"
+    ) {
+      return res.status(500).json({
+        mensagem: "Número do WhatsApp da empresa não configurado.",
+      });
+    }
+
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError
+    ) {
+      console.error(error);
     }
 
     console.error(error);
 
     return res.status(500).json({
-      mensagem: "Erro ao finalizar carrinho.",
+      mensagem: "Erro ao gerar pedido para o WhatsApp.",
     });
   }
 }

@@ -1,10 +1,20 @@
 import { Router } from "express";
 import { authMiddleware } from "../../middlewares/auth.middleware.js";
-import { adicionarItemCarrinhoController, atualizarItemCarrinhoController, finalizarCarrinhoController, listarCarrinhoController, removerItemCarrinhoController} from "./carrinho.controller.js";
+import {
+  adicionarItemCarrinhoController,
+  atualizarQuantidadeItemController,
+  gerarPedidoWhatsAppController,
+  listarCarrinhoController,
+  removerItemCarrinhoController,
+} from "./carrinho.controller.js";
 
 export const carrinhoRoutes = Router();
 
-carrinhoRoutes.get("/", authMiddleware, listarCarrinhoController);
+carrinhoRoutes.get(
+  "/",
+  authMiddleware,
+  listarCarrinhoController
+);
 
 carrinhoRoutes.post(
   "/itens",
@@ -13,19 +23,19 @@ carrinhoRoutes.post(
 );
 
 carrinhoRoutes.patch(
-  "/itens/:itemId",
+  "/itens/:id",
   authMiddleware,
-  atualizarItemCarrinhoController
+  atualizarQuantidadeItemController
 );
 
 carrinhoRoutes.delete(
-  "/itens/:itemId",
+  "/itens/:id",
   authMiddleware,
   removerItemCarrinhoController
 );
 
 carrinhoRoutes.post(
-  "/finalizar",
+  "/whatsapp",
   authMiddleware,
-  finalizarCarrinhoController
+  gerarPedidoWhatsAppController
 );
