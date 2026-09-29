@@ -1,24 +1,20 @@
 import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
-
-interface TokenPayLoad{
-    sub: string,
-    role: string
-}
+import jwt, { JwtPayload } from "jsonwebtoken";
 
 export function authMiddleware(
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
     return res.status(401).json({
-      mensgem: "Token não informado",
+      mensagem: "Token não informado",
     });
   }
-    const [tipo, token] = authHeader.split(" ");
+
+  const [tipo, token] = authHeader.split(" ");
 
   if (tipo !== "Bearer" || !token) {
     return res.status(401).json({
@@ -33,13 +29,23 @@ export function authMiddleware(
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET) as TokenPayLoad;
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET
+    ) as JwtPayload & { role: string };
 
-    req.usuarioId = decoded.sub;
+    const usuarioId = Number(decoded.sub);
+
+    if (!Number.isInteger(usuarioId)) {
+      return res.status(401).json({
+        mensagem: "Token inválido",
+      });
+    }
+
+    req.usuarioId = usuarioId;
     req.usuarioRole = decoded.role;
 
-    return next()
-
+    return next();
   } catch (error) {
     return res.status(401).json({
       mensagem: "Token inválido",

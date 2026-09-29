@@ -1,74 +1,18 @@
-import bcrypt from "bcrypt";
 import { prisma } from "../../database/prisma.js";
 
-interface cadastraUsuarioData {
-  nome: string;
-  email: string;
-  senha: string;
-}
-
-export async function cadastraUsuario(data: cadastraUsuarioData) {
- 
-  const usuarioExistente = await prisma.usuario.findUnique({
-    where: {
-      email: data.email,
-    },
-  });
-
-  if (usuarioExistente) {
-  throw new Error("Email já cadastrado");
-}
-
-  const senhaHash = await bcrypt.hash(data.senha, 10);
-
-  const usuario = await prisma.usuario.create({
-    data: {
-      nome: data.nome,
-      email: data.email,
-      senhaHash,
-    },
-    select:{
-        id: true,
-        nome: true,
-        email: true,
-        role: true,
-        criadoEm: true,
-        atualizadoEm: true,
-    }
-  });
-
-  return usuario;
-}
-
-export async function buscarUsuarioPorId(id: number) {
-  const usuario = await prisma.usuario.findUnique({
-    where: {
-      id,
-    },
-    select: {
-      id: true,
-      nome: true,
-      email: true,
-      role: true,
-      criadoEm: true,
-      atualizadoEm: true,
-    },
-  });
-
-  return usuario;
-}
-
-export async function listarInteracoesUsuario(usuarioId: number) {
-  const [favoritos, avaliacoes, carrinhosFinalizados] = await Promise.all([
+export async function buscarInteracoesUsuario(usuarioId: number) {
+  const [favoritos, avaliacoes, carrinhos] = await Promise.all([
     prisma.favorito.findMany({
       where: {
         usuarioId,
       },
       include: {
         produto: {
-          include: {
-            imagens: true,
-            categoria: true,
+          select: {
+            id: true,
+            nome: true,
+            preco: true,
+            disponivel: true,
           },
         },
       },
@@ -83,9 +27,9 @@ export async function listarInteracoesUsuario(usuarioId: number) {
       },
       include: {
         produto: {
-          include: {
-            imagens: true,
-            categoria: true,
+          select: {
+            id: true,
+            nome: true,
           },
         },
       },
@@ -97,7 +41,6 @@ export async function listarInteracoesUsuario(usuarioId: number) {
     prisma.carrinho.findMany({
       where: {
         usuarioId,
-        finalizado: true,
       },
       include: {
         itens: {
@@ -105,9 +48,10 @@ export async function listarInteracoesUsuario(usuarioId: number) {
             produtoVariacao: {
               include: {
                 produto: {
-                  include: {
-                    imagens: true,
-                    categoria: true,
+                  select: {
+                    id: true,
+                    nome: true,
+                    preco: true,
                   },
                 },
                 cor: true,
@@ -118,7 +62,7 @@ export async function listarInteracoesUsuario(usuarioId: number) {
         },
       },
       orderBy: {
-        atualizadoEm: "desc",
+        criadoEm: "desc",
       },
     }),
   ]);
@@ -126,6 +70,6 @@ export async function listarInteracoesUsuario(usuarioId: number) {
   return {
     favoritos,
     avaliacoes,
-    carrinhosFinalizados,
+    carrinhos,
   };
 }

@@ -94,14 +94,15 @@ model Favorito {
 }
 
 model Avaliacao {
-  nota       Int
-  comentario String?
-  criadoEm   DateTime @default(now())
-  id         Int      @id @default(autoincrement())
-  usuarioId  Int
-  produtoId  Int
-  produto    Produto  @relation(fields: [produtoId], references: [id], onDelete: Cascade)
-  usuario    Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  nota          Int
+  comentario    String?
+  respostaAdmin String?
+  criadoEm      DateTime @default(now())
+  id            Int      @id @default(autoincrement())
+  usuarioId     Int
+  produtoId     Int
+  produto       Produto  @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  usuario       Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
   @@unique([usuarioId, produtoId])
 }
