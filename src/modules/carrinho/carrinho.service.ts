@@ -42,6 +42,11 @@ async function obterOuCriarCarrinho(usuarioId: number) {
   });
 }
 
+const produtoCarrinhoInclude = {
+  categoria: true,
+  imagens: true,
+};
+
 export async function listarCarrinho(usuarioId: number) {
   return prisma.carrinho.findFirst({
     where: {
@@ -53,7 +58,9 @@ export async function listarCarrinho(usuarioId: number) {
         include: {
           produtoVariacao: {
             include: {
-              produto: true,
+              produto: {
+                include: produtoCarrinhoInclude,
+              },
               cor: true,
               tamanho: true,
             },
@@ -109,7 +116,9 @@ export async function adicionarItemCarrinho(
       include: {
         produtoVariacao: {
           include: {
-            produto: true,
+            produto: {
+              include: produtoCarrinhoInclude,
+            },
             cor: true,
             tamanho: true,
           },
@@ -127,7 +136,9 @@ export async function adicionarItemCarrinho(
     include: {
       produtoVariacao: {
         include: {
-          produto: true,
+          produto: {
+            include: produtoCarrinhoInclude,
+          },
           cor: true,
           tamanho: true,
         },
@@ -203,7 +214,9 @@ export async function gerarPedidoWhatsApp(
         include: {
           produtoVariacao: {
             include: {
-              produto: true,
+              produto: {
+                include: produtoCarrinhoInclude,
+              },
               cor: true,
               tamanho: true,
             },

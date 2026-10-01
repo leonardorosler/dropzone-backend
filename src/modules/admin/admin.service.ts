@@ -55,6 +55,12 @@ export async function buscarDadosDashboard() {
         select: {
           id: true,
           nome: true,
+          imagens: {
+            take: 1,
+            select: {
+              imagemUrl: true,
+            },
+          },
         },
       })
     : [];
@@ -74,6 +80,7 @@ export async function buscarDadosDashboard() {
       return {
         id: produto.id,
         nome: produto.nome,
+        imagemUrl: produto.imagens[0]?.imagemUrl ?? null,
         totalFavoritos: item._count.produtoId,
       };
     })
@@ -90,6 +97,7 @@ export async function buscarDadosDashboard() {
       return {
         id: produto.id,
         nome: produto.nome,
+        imagemUrl: produto.imagens[0]?.imagemUrl ?? null,
         mediaAvaliacao: item._avg.nota ?? 0,
         totalAvaliacoes: item._count.nota,
       };

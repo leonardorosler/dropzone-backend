@@ -1,5 +1,16 @@
 import { prisma } from "../../database/prisma.js";
 
+const produtoFavoritoInclude = {
+  categoria: true,
+  imagens: true,
+  variacoes: {
+    include: {
+      cor: true,
+      tamanho: true,
+    },
+  },
+};
+
 // Adicionar produto aos favoritos
 export async function adicionarFavorito(  usuarioId: number,  produtoId: number) 
 {
@@ -21,7 +32,9 @@ export async function listarFavoritos(usuarioId: number) {
       usuarioId,
     },
     include: {
-      produto: true,
+      produto: {
+        include: produtoFavoritoInclude,
+      },
     },
   });
 

@@ -1,7 +1,14 @@
 import { GoogleGenAI } from "@google/genai";
 import { prisma } from "../../database/prisma.js";
 
-const MODELO_GEMINI = "gemini-3.8-flash";
+const MODELOS_GEMINI = process.env.GEMINI_MODEL
+  ? [process.env.GEMINI_MODEL]
+  : [
+      "gemini-3.5-flash-lite",
+      "gemini-3.8-flash",
+      "gemini-3.5-flash",
+      "gemini-2.5-flash",
+    ];
 const LIMITE_PRODUTOS_CATALOGO = 20;
 
 interface SugestaoLook {
@@ -110,11 +117,7 @@ export async function gerarSugestaoLook(
     ],
   }));
 
-  const ai = criarClienteGemini();
-
-  const response = await ai.models.generateContent({
-    model: MODELO_GEMINI,
-    contents: `
+  const prompt = `
 Você é um assistente de moda de uma loja de roupas.
 
 Produto base:
@@ -136,44 +139,68 @@ Regras:
 - Não sugira o próprio produto base.
 - Explique de forma curta por que cada peça combina.
 - Se não houver boas opções, retorne uma lista vazia.
-`,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: "object",
-        properties: {
-          explicacao: {
-            type: "string",
-          },
-          sugestoes: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                produtoId: {
-                  type: "integer",
-                },
-                nome: {
-                  type: "string",
-                },
-                motivo: {
-                  type: "string",
+`;
+
+  const ai = criarClienteGemini();
+  let textoResposta = "";
+  let ultimoErro: unknown = null;
+
+  for (const modelo of MODELOS_GEMINI) {
+    try {
+      const response = await ai.models.generateContent({
+        model: modelo,
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "object",
+            properties: {
+              explicacao: {
+                type: "string",
+              },
+              sugestoes: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    produtoId: {
+                      type: "integer",
+                    },
+                    nome: {
+                      type: "string",
+                    },
+                    motivo: {
+                      type: "string",
+                    },
+                  },
+                  required: ["produtoId", "nome", "motivo"],
                 },
               },
-              required: ["produtoId", "nome", "motivo"],
             },
+            required: ["explicacao", "sugestoes"],
           },
         },
-        required: ["explicacao", "sugestoes"],
-      },
-    },
-  });
+      });
 
-  if (!response.text) {
-    throw new Error("RESPOSTA_IA_VAZIA");
+      if (response.text) {
+        textoResposta = response.text;
+        break;
+      }
+
+      ultimoErro = new Error("RESPOSTA_IA_VAZIA");
+    } catch (error) {
+      ultimoErro = error;
+      console.error(`Erro ao chamar modelo ${modelo}:`, error);
+    }
   }
 
-  const respostaIA = JSON.parse(response.text) as {
+  if (!textoResposta) {
+    throw ultimoErro instanceof Error
+      ? ultimoErro
+      : new Error("RESPOSTA_IA_VAZIA");
+  }
+
+  const respostaIA = JSON.parse(textoResposta) as {
     explicacao: string;
     sugestoes: Array<{
       produtoId: number;
