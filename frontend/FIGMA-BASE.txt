@@ -1,0 +1,5 @@
+Base visual usada:
+Arquivo Figma informado pelo usuário
+Frame 1: node 128:229
+Nome adaptado para DROPZONE
+Layouts de referência: 1920w, 1440w e 390w
